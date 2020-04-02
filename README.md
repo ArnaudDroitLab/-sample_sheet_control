@@ -1,16 +1,7 @@
 ---
 title: "sample sheet control"
 author: "NGS Team"
-date: "`r format(Sys.time(), '%d %B, %Y')`"
-output:
-  html_document:
-    toc: true # table of content true
-    toc_depth: 3 # upto three depths of heading (specified by #, ## and ###)
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo=T, eval=T, include=T, message=F, warning=F)
-```
 
 ## Installation
 
@@ -18,10 +9,16 @@ knitr::opts_chunk$set(echo=T, eval=T, include=T, message=F, warning=F)
     - python 3.7
     - <font size="4">[pandas](https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)</font>  library
 
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 ## Running
 
 * In the main directory:
     - python3 sample_sheet_control.py -s *Path/sample_sheet_to_verify_format*
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 ## What is he doing
 
@@ -38,6 +35,9 @@ knitr::opts_chunk$set(echo=T, eval=T, include=T, message=F, warning=F)
         - no different length of sequences within the same columns
         - no blank cells for column *I7* sequences index column
         - blank cells are allowed in *I5* sequences index column only if all of these cells are empty for the line group
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 ## Test
 
