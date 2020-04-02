@@ -68,9 +68,12 @@ def reading_sample_sheet(sample):
     #Reading of sample_sheet
     try:
         sample_sheet = pd.read_excel(sample, sep=",", sheet_name="Sheet1")
+        idi_index = pd.read_csv("data/IDI_index.csv", header=True, sep=",")
+        neb_index = pd.read_csv("data/NEB_index_filter.csv", header=True, sep=",")
     except FileNotFoundError:
-        print("\nLe fichier '{}{}{}' est introuvable, vérifier \
-            le nom du fichier passé en argument.".format(cl.RED, sample, cl.DEFAULT))
+        print("\nL'un des fichiers suivant '{}{}{}{}{}' est introuvable, vérifier \
+            le nom du fichier passé en argument ainsi que la présence des fichiers\
+            'IDI_index.csv' & 'NEB_index_filter.csv' dans le répertoir data.".format(cl.RED, sample, cl.DEFAULT))
         sys.exit(1)
 
     #Verification columns number
@@ -88,8 +91,8 @@ def reading_sample_sheet(sample):
         sample_sheet.drop([idx], inplace=True)
         idx += 1
 
-    #Replace empty cell by "1337"
-    sample_sheet.fillna(1337, inplace=True)
+    #Replace empty cell by "1337oxd7"
+    sample_sheet.fillna("1337oxd7", inplace=True)
 
     #Control the containing char in a specific column
     value.append(control_char(protected, sample_sheet, "SampleName"))
@@ -104,7 +107,7 @@ def reading_sample_sheet(sample):
     try:
         columne_name = []
         for columne in client:
-            if len(sample_sheet[sample_sheet[columne] == 1337]) > 0:
+            if len(sample_sheet[sample_sheet[columne] == "1337oxd7"]) > 0:
                 columne_name.append(columne)
 
         if len(columne_name) > 0:
