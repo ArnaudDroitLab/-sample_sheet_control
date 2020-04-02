@@ -1,7 +1,4 @@
----
-title: "sample sheet control"
-author: "NGS Team"
----
+#Sample_sheet_control
 
 ## Installation
 
@@ -9,15 +6,12 @@ author: "NGS Team"
     - python 3.7
     - <font size="4">[pandas](https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)</font>  library
 
-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## Running
 
 * In the main directory:
     - python3 sample_sheet_control.py -s *Path/sample_sheet_to_verify_format*
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## What is he doing
@@ -35,8 +29,6 @@ author: "NGS Team"
         - no different length of sequences within the same columns
         - no blank cells for column *I7* sequences index column
         - blank cells are allowed in *I5* sequences index column only if all of these cells are empty for the line group
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 ## Test
