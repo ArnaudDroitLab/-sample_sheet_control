@@ -50,23 +50,24 @@ def reading_sample_sheet(sample):
     idx = 0
     value = []
 
-    client = ["SampleName", "Index1", "Indexseq1", "Index2", "Indexseq2",\
+    client = ["SampleName", "Index1", "Index2",\
         "Concentration_(ng/ul)", "Volume_fourni"]
 
     header = ["FCID", "SampleSheetName", "Ligne", "No_Sample_si_en_tube", "Puits_si_en_plaque",\
         "SampleName", "Index1", "Indexseq1", "Index2", "Indexseq2", "Séquençage",\
         "Concentration_(ng/ul)", "Volume_fourni"]
 
-    alpha = ['&', 'é', '"', "'", 'è', 'ç', 'à', '@', "~", 'ù', ',', '\t', '\n', " ",\
-        "B", "D", "E", "F", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R",\
+    alpha = ['&', 'é', '"', "'", 'è', 'ç', 'à', '@', "~", 'ù', ',', '\t', '\n', " ", "#",\
+        "B", "D", "E", "F", "H", "I", "J", "K", "L", "M", "O", "P", "Q", "R",\
         "S", "U", "V", "W", "X", "Y", "Z"]
 
-    num = ["A", "T", "C", "G", "#"]
+    num = ["A", "T", "C", "G", "N"]
 
     protected = ['\.', '&', 'é', '"', "'", 'è', 'ç', 'à', '@',\
         'ù', ',', '\t', '\n', " ", "#", "~"]
 
     num.extend(alpha)
+    alpha.extend(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
     #Reading of sample_sheet and data index
     try:
@@ -110,47 +111,62 @@ def reading_sample_sheet(sample):
     for name, group in grouped:
         index_seq_len_1, index_seq_len_2, index_seq_1, index_seq_2 = ([] for _ in range(4))
         diff_seq = False
-
-        for idx, row in group.iterrows():
-            index_seq_len_1.append(len(row["Indexseq1"]))
-            index_seq_len_2.append(len(row["Indexseq2"]))
-            index_seq_1.append(row["Indexseq1"])
-            index_seq_2.append(row["Indexseq1"])
-
-        index_seq = index_seq_1
-        index_seq.extend(index_seq_2)
-
-        for idx in index_seq:
-            if idx not in index_list:
-                diff_seq = True
-
         try:
-            if len(set(index_seq_len_1)) > 1 or len(set(index_seq_len_2)) > 1: raise ex.LenWrong
-            if set(index_seq_len_2).pop() != 0 and set(index_seq_len_1).pop() != set(index_seq_len_2).pop(): raise ex.InegalLen
-        except ex.LenWrong:
-            print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ont des longueurs variable"\
+            if group.Indexseq1.count() < len(group.Indexseq1):
+                raise ex.EmptyCellIdx1
+            if group.Indexseq2.count() == len(group.Indexseq2):
+                for idx, row in group.iterrows():
+                    index_seq_len_1.append(len(row["Indexseq1"]))
+                    index_seq_len_2.append(len(row["Indexseq2"]))
+                    index_seq_1.append(row["Indexseq1"])
+                    index_seq_2.append(row["Indexseq2"])
+
+                index_seq = index_seq_1
+                index_seq.extend(index_seq_2)
+
+                for idx in index_seq:
+                    if idx not in index_list:
+                        diff_seq = True
+
+                try:
+                    if len(set(index_seq_len_1)) > 1 or len(set(index_seq_len_2)) > 1: raise ex.LenWrong
+                    if set(index_seq_len_2).pop() != 0 and set(index_seq_len_1).pop() != set(index_seq_len_2).pop(): raise ex.InegalLen
+                except ex.LenWrong:
+                    print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ont des longueurs variable"\
+                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    value.append(1)
+                except ex.InegalLen:
+                    print("{} erreur -> {} Les séquences d'index 1 et 2 pour la ligne {}{}{} n'ont pas la même longueur"\
+                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    value.append(1)
+                try:
+                    if len(set(index_seq_1)) != len(index_seq_1) or len(set(index_seq_2)) != len(index_seq_2): raise ex.NotUnique
+                except ex.NotUnique:
+                    print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ne sont pas unique"\
+                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    value.append(1)
+                try:
+                    if diff_seq: raise ex.NotListed
+                except ex.NotListed:
+                    print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble\
+                    des index disponible".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    value.append(1)
+            elif group.Indexseq2.count() < len(group.Indexseq2) and group.Indexseq2.count() != 0:
+                raise ex.EmptyCell
+
+        except ex.EmptyCell:
+            print("{} erreur -> {} Des cellules vides dans la colone 'Index_seq_2' sont retrouvé pour la ligne {}{}{}"\
             .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
             value.append(1)
-        except ex.InegalLen:
-            print("{} erreur -> {} Les séquences d'index 1 et 2 pour la ligne {}{}{} n'ont pas la même longueur"\
+
+        except ex.EmptyCellIdx1:
+            print("{} erreur -> {} Des cellules vides dans la colone 'Index_seq_1' sont retrouvé pour la ligne {}{}{}"\
             .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
-            value.append(1)
-        try:
-            if len(set(index_seq_1)) != len(index_seq_1) or len(set(index_seq_2)) != len(index_seq_2): raise ex.NotUnique
-        except ex.NotUnique:
-            print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ne sont pas unique"\
-            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
-            value.append(1)
-        try:
-            if diff_seq: raise ex.NotListed
-        except ex.NotListed:
-            print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble\
-             des index disponible".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
             value.append(1)
 
 
     #Replace empty cell by "1337oxd7"
-    sample_sheet.fillna("1337oxd7", inplace=True)
+    sample_sheet.fillna("", inplace=True)
 
     #Control the containing char in a specific column
     value.append(control_char(protected, sample_sheet, "SampleName"))
@@ -165,7 +181,7 @@ def reading_sample_sheet(sample):
     try:
         columne_name = []
         for columne in client:
-            if len(sample_sheet[sample_sheet[columne] == "1337oxd7"]) > 0:
+            if len(sample_sheet[sample_sheet[columne] == ""]) > 0:
                 columne_name.append(columne)
 
         if len(columne_name) > 0:
