@@ -7,6 +7,7 @@
 
 import argparse
 import sys
+import warnings
 import pandas as pd
 from utils import exceptions as ex
 from utils import colors as cl
@@ -15,6 +16,8 @@ PARSER = argparse.ArgumentParser(description='Control & sampleSheet parse')
 PARSER.add_argument('--sample_sheet', required=False, help='sampleSheet')
 
 ARG = PARSER.parse_args()
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def control_char(protected, sample_sheet, colonne):
     """Try Catch control"""
@@ -65,16 +68,26 @@ def reading_sample_sheet(sample):
 
     num.extend(alpha)
 
-    #Reading of sample_sheet
+    #Reading of sample_sheet and data index
     try:
         sample_sheet = pd.read_excel(sample, sep=",", sheet_name="Sheet1")
-        idi_index = pd.read_csv("data/IDI_index.csv", header=True, sep=",")
-        neb_index = pd.read_csv("data/NEB_index_filter.csv", header=True, sep=",")
+        idi_index = pd.read_csv("data/IDI_index.csv", sep=",")
+        neb_index = pd.read_csv("data/NEB_index_filter.csv", sep=",")
     except FileNotFoundError:
-        print("\nL'un des fichiers suivant '{}{}{}{}{}' est introuvable, vérifier \
+        print("\nL'un des fichiers suivant '{}{}{}' est introuvable, vérifier \
             le nom du fichier passé en argument ainsi que la présence des fichiers\
             'IDI_index.csv' & 'NEB_index_filter.csv' dans le répertoir data.".format(cl.RED, sample, cl.DEFAULT))
         sys.exit(1)
+
+    #Index data information tolist()
+    index_list = idi_index["i5_index"].tolist()
+    index_list.extend(idi_index["i7_index"].tolist())
+
+    index_list_neb = neb_index["I7_INDEX_READ"].tolist()
+    index_list_neb.extend(neb_index["I5_INDEX_READ_NOVASEQ"].tolist())
+    index_list_neb = list(set(index_list_neb))
+
+    index_list.extend(index_list_neb)
 
     #Verification columns number
     try:
@@ -90,6 +103,51 @@ def reading_sample_sheet(sample):
     while idx < 21:
         sample_sheet.drop([idx], inplace=True)
         idx += 1
+
+    #Specific control on identifier sequences
+    grouped = sample_sheet.groupby("Ligne")
+
+    for name, group in grouped:
+        index_seq_len_1, index_seq_len_2, index_seq_1, index_seq_2 = ([] for _ in range(4))
+        diff_seq = False
+
+        for idx, row in group.iterrows():
+            index_seq_len_1.append(len(row["Indexseq1"]))
+            index_seq_len_2.append(len(row["Indexseq2"]))
+            index_seq_1.append(row["Indexseq1"])
+            index_seq_2.append(row["Indexseq1"])
+
+        index_seq = index_seq_1
+        index_seq.extend(index_seq_2)
+
+        for idx in index_seq:
+            if idx not in index_list:
+                diff_seq = True
+
+        try:
+            if len(set(index_seq_len_1)) > 1 or len(set(index_seq_len_2)) > 1: raise ex.LenWrong
+            if set(index_seq_len_2).pop() != 0 and set(index_seq_len_1).pop() != set(index_seq_len_2).pop(): raise ex.InegalLen
+        except ex.LenWrong:
+            print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ont des longueurs variable"\
+            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            value.append(1)
+        except ex.InegalLen:
+            print("{} erreur -> {} Les séquences d'index 1 et 2 pour la ligne {}{}{} n'ont pas la même longueur"\
+            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            value.append(1)
+        try:
+            if len(set(index_seq_1)) != len(index_seq_1) or len(set(index_seq_2)) != len(index_seq_2): raise ex.NotUnique
+        except ex.NotUnique:
+            print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ne sont pas unique"\
+            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            value.append(1)
+        try:
+            if diff_seq: raise ex.NotListed
+        except ex.NotListed:
+            print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble\
+             des index disponible".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            value.append(1)
+
 
     #Replace empty cell by "1337oxd7"
     sample_sheet.fillna("1337oxd7", inplace=True)
