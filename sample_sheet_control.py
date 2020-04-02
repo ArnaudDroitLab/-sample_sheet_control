@@ -13,7 +13,7 @@ from utils import exceptions as ex
 from utils import colors as cl
 
 PARSER = argparse.ArgumentParser(description='Control & sampleSheet parse')
-PARSER.add_argument('--sample_sheet', required=False, help='sampleSheet')
+PARSER.add_argument('-s', '--sample_sheet', required=False, help='sampleSheet')
 
 ARG = PARSER.parse_args()
 
