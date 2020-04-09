@@ -19,7 +19,7 @@ ARG = PARSER.parse_args()
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-def control_char(protected, sample_sheet, colonne):
+def control_char(protected, sample_sheet, colonne, design):
     """Try Catch control"""
     try:
         char_found = []
@@ -32,14 +32,12 @@ def control_char(protected, sample_sheet, colonne):
             raise ex.ForbidenChar
 
     except ex.ForbidenChar:
-        print("\n{}{}{}WARNING{}{}{}".format(cl.YELLOW, cl.BOLD, cl.UNDERLINED,\
-            cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
-        print("Des caractères proscrits ont été retrouvés dans la colonne {}{}{} :"\
-            .format(cl.YELLOW, colonne, cl.DEFAULT))
+        buf = "Des caractères proscrits ont été retrouvés dans la colonne {}{}{} :\n".format(cl.YELLOW, colonne, cl.DEFAULT)
 
         for count, ele in enumerate(char_found, 1):
-            print("{} : {}{}{}".format(count, cl.RED, ele, cl.DEFAULT))
+            buf += "{} : {}{}{}\n".format(count, cl.RED, ele, cl.DEFAULT)
 
+        design["warning"].append(buf)
         return 1
     return 0
 
@@ -49,6 +47,11 @@ def reading_sample_sheet(sample):
     # Variable declaration
     idx = 0
     value = []
+    design = {"warning":[], "erreur":[]}
+    design["warning"].append("\n{}{}{}WARNING{}{}{}".format(cl.YELLOW, cl.BOLD, cl.UNDERLINED,\
+            cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
+    design["erreur"].append("\n{}{}{}ERROR{}{}{}".format(cl.RED, cl.BOLD, cl.UNDERLINED,\
+            cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
 
     client = ["SampleName", "Index1", "Index2",\
         "Concentration_(ng/ul)", "Volume_fourni"]
@@ -133,36 +136,36 @@ def reading_sample_sheet(sample):
                     if len(set(index_seq_len_1)) > 1 or len(set(index_seq_len_2)) > 1: raise ex.LenWrong
                     if set(index_seq_len_2).pop() != 0 and set(index_seq_len_1).pop() != set(index_seq_len_2).pop(): raise ex.InegalLen
                 except ex.LenWrong:
-                    print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ont des longueurs variable"\
-                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    design["erreur"].append("Les séquences d'index pour la ligne {}{}{} ont des longueurs variable"\
+                    .format(cl.YELLOW, name, cl.DEFAULT))
                     value.append(1)
                 except ex.InegalLen:
-                    print("{} erreur -> {} Les séquences d'index 1 et 2 pour la ligne {}{}{} n'ont pas la même longueur"\
-                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    design["erreur"].append("Les séquences d'index 1 et 2 pour la ligne {}{}{} n'ont pas la même longueur"\
+                    .format(cl.YELLOW, name, cl.DEFAULT))
                     value.append(1)
                 try:
                     if len(set(index_seq_1)) != len(index_seq_1) or len(set(index_seq_2)) != len(index_seq_2): raise ex.NotUnique
                 except ex.NotUnique:
-                    print("{} erreur -> {} Les séquences d'index pour la ligne {}{}{} ne sont pas unique"\
-                    .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    design["erreur"].append("Les séquences d'index pour la ligne {}{}{} ne sont pas unique"\
+                    .format(cl.YELLOW, name, cl.DEFAULT))
                     value.append(1)
                 try:
                     if diff_seq: raise ex.NotListed
                 except ex.NotListed:
-                    print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble"
-                        " des index disponibles".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    design["warning"].append("Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble"\
+                    .format(cl.YELLOW, name, cl.DEFAULT))
                     value.append(1)
             elif group.Indexseq2.count() < len(group.Indexseq2) and group.Indexseq2.count() != 0:
                 raise ex.EmptyCell
 
         except ex.EmptyCell:
-            print("{} erreur -> {} Des cellules vides dans la colone 'Index_seq_2' sont retrouvé pour la ligne {}{}{}"\
-            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            design["erreur"].append("Des cellules vides dans la colone 'Index_seq_2' sont retrouvé pour la ligne {}{}{}"\
+            .format(cl.YELLOW, name, cl.DEFAULT))
             value.append(1)
 
         except ex.EmptyCellIdx1:
-            print("{} erreur -> {} Des cellules vides dans la colone 'Index_seq_1' sont retrouvé pour la ligne {}{}{}"\
-            .format(cl.RED, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+            design["erreur"].append("Des cellules vides dans la colone 'Index_seq_1' sont retrouvé pour la ligne {}{}{}"\
+            .format(cl.YELLOW, name, cl.DEFAULT))
             value.append(1)
 
 
@@ -170,13 +173,13 @@ def reading_sample_sheet(sample):
     sample_sheet.fillna("", inplace=True)
 
     #Control the containing char in a specific column
-    value.append(control_char(protected, sample_sheet, "SampleName"))
-    value.append(control_char(protected, sample_sheet, "Index1"))
-    value.append(control_char(protected, sample_sheet, "Index2"))
-    value.append(control_char(alpha, sample_sheet, "Indexseq1"))
-    value.append(control_char(alpha, sample_sheet, "Indexseq2"))
-    value.append(control_char(num, sample_sheet, "Concentration_(ng/ul)"))
-    value.append(control_char(num, sample_sheet, "Volume_fourni"))
+    value.append(control_char(protected, sample_sheet, "SampleName", design))
+    value.append(control_char(protected, sample_sheet, "Index1", design))
+    value.append(control_char(protected, sample_sheet, "Index2", design))
+    value.append(control_char(alpha, sample_sheet, "Indexseq1", design))
+    value.append(control_char(alpha, sample_sheet, "Indexseq2", design))
+    value.append(control_char(num, sample_sheet, "Concentration_(ng/ul)", design))
+    value.append(control_char(num, sample_sheet, "Volume_fourni", design))
 
     #Verify if empty cell are found in the data for column write by client.
     try:
@@ -189,14 +192,12 @@ def reading_sample_sheet(sample):
             raise ex.ForbidenChar
 
     except ex.ForbidenChar:
-        print("\n{}{}{}WARNING{}{}{}".format(cl.YELLOW, cl.BOLD, cl.UNDERLINED,\
-            cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
-        print("Des cases non remplies sont présents dans la (les) colonne(s) :")
+        buf = "Des cases non remplies sont présents dans la (les) colonne(s) :\n"
 
         for count, ele in enumerate(columne_name, 1):
-            print("{} : {}{}{}{}{}{}{}".format(count, cl.LIGHTRED, cl.BOLD, cl.UNDERLINED, ele,\
-                cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
-
+            buf += "{} : {}{}{}{}{}{}{}\n".format(count, cl.LIGHTRED, cl.BOLD, cl.UNDERLINED, ele,\
+                cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT)
+        design["warning"].append(buf)
         value.append(1)
 
     #If no mistake are founds, print OK for quality control
@@ -204,6 +205,13 @@ def reading_sample_sheet(sample):
         print("\nLa sample sheet semble être correctement formaté\n\n"
             "caractères particuliers : {0}{1}{2}\n"
             "Nombre de colonnes : {0}{3}{2}".format(cl.GREEN, "0", cl.DEFAULT, "13"))
+    else:
+        if len(design["warning"]) > 1:
+            for warning in design["warning"]:
+                print(warning)
+        if len(design["erreur"]) > 1:
+            for erreur in design["erreur"]:
+                print(erreur)
 
 if __name__ == "__main__":
     reading_sample_sheet(ARG.sample_sheet)
