@@ -34,7 +34,7 @@ def control_char(protected, sample_sheet, colonne):
     except ex.ForbidenChar:
         print("\n{}{}{}WARNING{}{}{}".format(cl.YELLOW, cl.BOLD, cl.UNDERLINED,\
             cl.RESETUNDERLINED, cl.RESETBOLD, cl.DEFAULT))
-        print("Des caractères proscrits ont été retrouvé dans la colonne {}{}{} :"\
+        print("Des caractères proscrits ont été retrouvés dans la colonne {}{}{} :"\
             .format(cl.YELLOW, colonne, cl.DEFAULT))
 
         for count, ele in enumerate(char_found, 1):
@@ -75,9 +75,10 @@ def reading_sample_sheet(sample):
         idi_index = pd.read_csv("data/IDI_index.csv", sep=",")
         neb_index = pd.read_csv("data/NEB_index_filter.csv", sep=",")
     except FileNotFoundError:
-        print("\nL'un des fichiers suivant '{}{}{}' est introuvable, vérifier \
-            le nom du fichier passé en argument ainsi que la présence des fichiers\
-            'IDI_index.csv' & 'NEB_index_filter.csv' dans le répertoir data.".format(cl.RED, sample, cl.DEFAULT))
+        print("\nL'un des fichiers suivant '{}{}{}' est introuvable, vérifier"
+            " le nom du fichier passé en argument ainsi que la présence des fichiers"
+            " 'IDI_index.csv' & 'NEB_index_filter.csv' dans le répertoir data."\
+            .format(cl.RED, sample, cl.DEFAULT))
         sys.exit(1)
 
     #Index data information tolist()
@@ -148,8 +149,8 @@ def reading_sample_sheet(sample):
                 try:
                     if diff_seq: raise ex.NotListed
                 except ex.NotListed:
-                    print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble\
-                    des index disponible".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
+                    print("{} warning -> {} Certaines séquences d'index pour la ligne {}{}{} ne sont pas listé dans l'ensemble"
+                        " des index disponibles".format(cl.YELLOW, cl.DEFAULT, cl.YELLOW, name, cl.DEFAULT))
                     value.append(1)
             elif group.Indexseq2.count() < len(group.Indexseq2) and group.Indexseq2.count() != 0:
                 raise ex.EmptyCell
@@ -200,8 +201,8 @@ def reading_sample_sheet(sample):
 
     #If no mistake are founds, print OK for quality control
     if 1 not in value:
-        print("\nLa sample sheet semble être correctement formaté\n\n"\
-            "caractères particuliers : {0}{1}{2}\n"\
+        print("\nLa sample sheet semble être correctement formaté\n\n"
+            "caractères particuliers : {0}{1}{2}\n"
             "Nombre de colonnes : {0}{3}{2}".format(cl.GREEN, "0", cl.DEFAULT, "13"))
 
 if __name__ == "__main__":

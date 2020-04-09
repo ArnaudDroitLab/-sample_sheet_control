@@ -5,6 +5,8 @@
 * Requires:
     - python 3.7
     - <font size="4">[pandas](https://pandas.pydata.org/pandas-docs/stable/getting_started/install.html)</font>  library
+    - <font size="4">[xlrd](https://xlrd.readthedocs.io/en/latest/installation.html)</font>  library
+    - 
 
 
 
