@@ -105,7 +105,7 @@ def reading_sample_sheet(sample):
     sample_sheet.columns = header
 
     #Remove presentation row
-    while idx < 21:
+    while idx < 22:
         sample_sheet.drop([idx], inplace=True)
         idx += 1
 
